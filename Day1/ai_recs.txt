@@ -1,0 +1,86 @@
+Reviewing the code for skill improvements:
+Review of your solution.py:
+What works well:
+Clear function separation
+Comments explaining intent
+Uses regex appropriately
+Correct result
+Areas for improvement:
+1) Unnecessary list creation
+determine_current_point() rebuilds a 100-element list on each call (line 51 inside the loop), which is inefficient. With 4732 turns, that's ~473,200 list operations. The dial wraps, so use modulo arithmetic instead.
+2) Dead code
+plus_100_adjustment() (lines 33-34) serves no purpose; remove it.
+3) Inconsistent use of globals
+dial_options and starting_point are globals but passed as parameters in some places. Prefer explicit parameters and return values.
+4) Variable naming
+ad, zd are unclear; use meaningful names
+input shadows the built-in; use input_data or similar
+5) Logic simplification
+Modulo handles wrapping for any value. In spin_direction() (lines 25-26), you can simplify.
+6) Potential bug with negative indices
+When turn_amount is negative (L turns), current_point_list[turn_amount] still works, but it's more fragile. Use modulo to make the wrapping explicit.
+Summary:
+Simplify by using modulo arithmetic instead of rebuilding lists
+Remove dead code
+Improve variable naming
+Make function dependencies explicit
+
+
+Reviewing p2prompt.txt and solution2.py for the same feedback.
+Review of solution2.py:
+What works well:
+You correctly identified that large rotations need special handling
+You're tracking zero crossings during rotations
+The logic structure is similar to part 1, showing consistency
+Areas for improvement:
+1) Complex and fragile zero-crossing logic
+plus_100_adjustment() (lines 35-62) has several issues:
+starting_point[0] assumes a list, but starting_point is sometimes a list and sometimes an int, causing confusion
+The logic for detecting zero crossings is convoluted with many edge cases
+Debug print statements left in (lines 45, 61)
+The function name doesn't clearly describe what it does
+2) Inconsistent data types
+dial_starting_point is a list (from determine_current_point)
+new_current_point is an int
+plus_100_adjustment receives a list but accesses starting_point[0], which is fragile
+3) Mathematical approach
+For counting zero crossings, you can use:
+Number of full rotations: abs(turn_amount) // 100
+Whether the rotation crosses zero: check if the start and end positions are on opposite sides of zero
+4) Logic issues in zero detection
+Lines 39-47 and 50-57 have redundant checks. The logic can be simplified:
+If ending_point == 0, you've landed on zero (count it)
+If the rotation crosses the 99→0 boundary, count it
+Add full rotations
+5) Code reuse
+You're still calling determine_current_point() in a loop, which is inefficient.
+6) Unclear variable names
+small_zero_turns vs full_turns — the distinction isn't clear
+small_turn in register_turn — what does "small" mean?
+7) Commented-out code
+Lines 26-27 have commented code that should be removed if not needed.
+Conceptual improvement:
+Instead of tracking lists and complex boundary checks, you can:
+1. Track the current position as a single integer (0-99)
+2. Calculate the end position using modulo
+3. Count zero crossings by checking if the rotation path crosses the 99→0 boundary
+4. Add full rotations (every 100 clicks = 1 zero crossing)
+
+
+Suggested Improvement Path
+Start small — tackle one issue at a time:
+Phase 1: Quick wins (low risk, immediate benefits)
+Remove dead code — delete plus_100_adjustment() function stub from solution.py
+Remove debug prints — delete the print() statements from solution2.py (lines 45, 61)
+Remove commented code — clean up the commented lines in solution2.py (26-27)
+Phase 2: Simplify logic (medium complexity)
+Replace list rebuilding with modulo — In solution.py, instead of calling determine_current_point() in a loop, just track a single integer and use % 100 for wrapping
+Simplify spin_direction() — Remove the > 100 check since modulo handles it naturally
+Phase 3: Part 2 improvements (more complex)
+Fix data type consistency — Make sure you're always working with integers, not lists
+Simplify zero-crossing logic — Break down plus_100_adjustment() into smaller, clearer functions
+Each phase can be done independently and tested after. When you're ready to work on any step, ask and we can:
+Focus on that one change
+Test it with your example input
+Make sure it still produces the correct answer
+Move to the next step
