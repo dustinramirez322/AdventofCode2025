@@ -1,0 +1,247 @@
+================================================================================
+DAY 4 PART 1 - CODE REVIEW & IMPROVEMENT SUGGESTIONS
+================================================================================
+
+OVERALL ASSESSMENT:
+✓ Solution works correctly
+✓ Clever padding approach to handle edge cases
+✓ Clean, readable structure
+✓ Good function separation
+
+================================================================================
+WHAT WORKS WELL:
+================================================================================
+
+1. PADDING STRATEGY (Lines 3-8)
+   ✓ Smart solution to avoid edge case complexity
+   ✓ Adding ".." to front/back and padding rows avoids index errors
+   ✓ This is a valid and practical approach
+
+2. FUNCTION SEPARATION
+   ✓ `find_paper_roll()` handles iteration
+   ✓ `eval_adj_locs()` handles the logic
+   ✓ Good separation of concerns
+
+3. SIMPLE LOGIC
+   ✓ Direct approach: find '@', check neighbors, count
+   ✓ Easy to understand flow
+
+================================================================================
+AREAS FOR IMPROVEMENT:
+================================================================================
+
+1. MUTABLE DEFAULT ARGUMENT (Line 14) ⚠️
+   Issue: `roll_count=[]` is a mutable default argument
+   
+   Current:
+   def find_paper_roll(rows, roll_count=[]):
+   
+   Problem: 
+   - Default arguments are evaluated once when function is defined
+   - If you call the function twice without passing roll_count, both calls
+     would share the same list (bug!)
+   
+   Better:
+   def find_paper_roll(rows, roll_count=None):
+       if roll_count is None:
+           roll_count = []
+       # ... rest of code
+   
+   Or even better (since you always pass it on line 49 anyway):
+   def find_paper_roll(rows):
+       roll_count = []
+       # ... rest of code
+   
+   Then call it as: roll_count = find_paper_roll(rows)
+
+2. LOGIC CLARITY (Line 42)
+   Issue: The condition `total < 5` works but is indirect
+   
+   Current logic:
+   - Counts ALL '@' in 3x3 box (including center)
+   - Checks if total < 5
+   - This works because: center '@' + neighbors '@' < 5 means neighbors < 4
+   
+   Problem:
+   - The code comment says "if total is less than 5" but the problem asks
+     for "fewer than four rolls in the eight adjacent positions"
+   - This indirect logic makes the code harder to understand
+   
+   Better (more explicit):
+   # Count all '@' in 3x3 box
+   total = count_top + count_mid + count_bot
+   # Subtract the center cell (we only want neighbors)
+   neighbor_count = total - 1  # Subtract center
+   # Check if fewer than 4 neighbors are '@'
+   if neighbor_count < 4:
+       return 1
+   else:
+       return 0
+   
+   Or even clearer:
+   # Count neighbors only (exclude center)
+   neighbor_count = total - 1  # Remove the center '@'
+   return 1 if neighbor_count < 4 else 0
+
+3. VARIABLE NAMING (Line 18)
+   Issue: `r` for row character is unclear
+   
+   Current:
+   for r in row:
+       if r == '@':
+   
+   Better:
+   for char in row:
+       if char == '@':
+   
+   Or:
+   for cell in row:
+       if cell == '@':
+
+4. INLINE SLICING (Lines 33-35)
+   Issue: Could be more readable with intermediate variables
+   
+   Current:
+   eval_top = rows[row_num - 1][column_num - 1: column_num + 2]
+   eval_mid = rows[row_num][column_num - 1: column_num + 2]
+   eval_bot = rows[row_num + 1][column_num - 1: column_num + 2]
+   
+   Better (more readable):
+   start_col = column_num - 1
+   end_col = column_num + 2
+   eval_top = rows[row_num - 1][start_col:end_col]
+   eval_mid = rows[row_num][start_col:end_col]
+   eval_bot = rows[row_num + 1][start_col:end_col]
+   
+   Note: This is optional - your current version is fine, just slightly
+   less readable due to repetition
+
+5. COMBINING COUNTS (Lines 37-40)
+   Issue: Three separate variables then sum
+   
+   Current:
+   count_top = eval_top.count('@')
+   count_mid = eval_mid.count('@')
+   count_bot = eval_bot.count('@')
+   total = count_top + count_mid + count_bot
+   
+   Better (more concise):
+   total = (eval_top.count('@') + 
+            eval_mid.count('@') + 
+            eval_bot.count('@'))
+   
+   Or if you don't need the individual counts:
+   all_cells = eval_top + eval_mid + eval_bot
+   total = all_cells.count('@')
+   
+   Note: Your current approach is fine if you need individual counts
+   for debugging, but if not, it's extra variables
+
+6. RETURN VALUES (Lines 43-45)
+   Issue: Can be simplified
+   
+   Current:
+   if total < 5:
+       return 1
+   else:
+       return 0
+   
+   Better:
+   return 1 if total < 5 else 0
+   
+   Or with the neighbor_count approach:
+   neighbor_count = total - 1
+   return 1 if neighbor_count < 4 else 0
+
+7. GLOBAL VARIABLE USAGE (Line 49)
+   Issue: Passing empty list when you could initialize inside function
+   
+   Current:
+   roll_count = find_paper_roll(rows, roll_count=[])
+   
+   Better (if you fix #1):
+   roll_count = find_paper_roll(rows)
+
+8. COMMENTS (Lines 3, 12, 21, 31, 36, 41)
+   Issue: Some comments are redundant or could be more descriptive
+   
+   Examples:
+   - Line 3: "# add .. to front and back of each row" - Good!
+   - Line 12: "# function to find a roll" - Redundant (function name says it)
+   - Line 21: "# if found, eval..." - Could be more specific
+   
+   Better comments would explain WHY, not WHAT:
+   "# Pad grid with '.' to avoid edge case index errors"
+   "# Count only the 8 neighbors, excluding the center cell"
+   "# Accessible if fewer than 4 neighbors are '@'"
+
+================================================================================
+CONCEPTUAL NOTES:
+================================================================================
+
+Your padding approach (adding ".." and padding rows) is clever and works well!
+This is a valid technique called "padding" or "sentinel values" that makes
+boundary checking easier. However, note that:
+
+1. You're modifying the grid structure (adding columns/rows)
+2. This uses slightly more memory
+3. You need to remember the padding is there (2 columns, 2 rows)
+
+An alternative would be bounds checking, but your approach is perfectly valid
+and arguably simpler for this problem.
+
+================================================================================
+PRIORITY IMPROVEMENTS:
+================================================================================
+
+HIGH PRIORITY:
+1. Fix mutable default argument (line 14) - This is a Python gotcha that
+   can cause subtle bugs
+
+MEDIUM PRIORITY:
+2. Clarify the neighbor counting logic (line 42) - Make it explicit that
+   you're checking neighbors < 4, not total < 5
+
+LOW PRIORITY:
+3. Improve variable naming (r → char/cell)
+4. Simplify return statements
+5. Clean up redundant comments
+
+================================================================================
+EXAMPLE OF IMPROVED VERSION (Conceptual):
+================================================================================
+
+def eval_adj_locs(row_num, column_num, rows):
+    # Extract 3x3 window around this position
+    start_col = column_num - 1
+    end_col = column_num + 2
+    
+    eval_top = rows[row_num - 1][start_col:end_col]
+    eval_mid = rows[row_num][start_col:end_col]
+    eval_bot = rows[row_num + 1][start_col:end_col]
+    
+    # Count all '@' in 3x3 box (including center)
+    total = (eval_top.count('@') + 
+             eval_mid.count('@') + 
+             eval_bot.count('@'))
+    
+    # Subtract center cell to get neighbor count only
+    neighbor_count = total - 1
+    
+    # Accessible if fewer than 4 neighbors are '@'
+    return 1 if neighbor_count < 4 else 0
+
+
+def find_paper_roll(rows):
+    roll_count = []
+    for row_num, row in enumerate(rows):
+        for column_num, char in enumerate(row):
+            if char == '@':
+                roll_count.append(eval_adj_locs(row_num, column_num, rows))
+    return roll_count
+
+================================================================================
+OVERALL: Solid solution with a clever approach! Main issues are Python
+best practices (mutable defaults) and code clarity (explicit neighbor count).
+================================================================================
+
